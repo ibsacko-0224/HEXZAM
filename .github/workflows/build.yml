@@ -57,3 +57,4 @@ jobs:
         with:
           name: HEXZAM-apk
           path: ${{ steps.proj.outputs.dir }}/app/build/outputs/apk/debug/*.apk
+'
