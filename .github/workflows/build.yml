@@ -1,0 +1,57 @@
+name: Build HEXZAM (Android)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.9
+
+      - name: Localiser le projet
+        id: proj
+        run: |
+          if [ ! -f settings.gradle.kts ] && [ -f Hexzam.zip ]; then
+            unzip -q Hexzam.zip -d projet
+          fi
+          S="$(find . -maxdepth 4 -name settings.gradle.kts | head -1)"
+          if [ -z "$S" ]; then
+            echo "::error::settings.gradle.kts introuvable (ni dans le dépôt, ni dans Hexzam.zip)."
+            exit 1
+          fi
+          echo "dir=$(dirname "$S")" >> "$GITHUB_OUTPUT"
+
+      - name: Compiler l'APK
+        working-directory: ${{ steps.proj.outputs.dir }}
+        run: gradle assembleDebug --stacktrace
+
+      - name: Publier l'APK (téléchargement direct, sans zip)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: ${{ steps.proj.outputs.dir }}
+        run: |
+          gh release create "hexzam-${{ github.run_number }}" \
+            app/build/outputs/apk/debug/app-debug.apk \
+            --title "HEXZAM - build ${{ github.run_number }}" \
+            --notes "APK de test, à installer directement sur le téléphone." \
+            --latest
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HEXZAM-apk
+          path: ${{ steps.proj.outputs.dir }}/app/build/outputs/apk/debug/*.apk
