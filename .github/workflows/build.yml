@@ -40,6 +40,7 @@ jobs:
         working-directory: ${{ steps.proj.outputs.dir }}
         env:
           AUDD_TOKEN: ${{ secrets.AUDD_TOKEN }}
+          JAMENDO_CLIENT_ID: ${{ secrets.JAMENDO_CLIENT_ID }}
         run: gradle assembleDebug --stacktrace
 
       - name: Publier l'APK (téléchargement direct, sans zip)
